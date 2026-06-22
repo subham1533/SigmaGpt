@@ -6,21 +6,21 @@ import {v1 as uuidv1} from "uuid";
 function Sidebar() {
     const {allThreads, setAllThreads, currThreadId, setNewChat, setPrompt, setReply, setCurrThreadId, setPrevChats} = useContext(MyContext);
 
-    const getAllThreads = async () => {
-        try {
-            const response = await fetch("http://localhost:8080/api/thread");
-            const res = await response.json();
-            const filteredData = res.map(thread => ({threadId: thread.threadId, title: thread.title}));
-            //console.log(filteredData);
-            setAllThreads(filteredData);
-        } catch(err) {
-            console.log(err);
-        }
-    };
-
     useEffect(() => {
+        const getAllThreads = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/api/thread");
+                const res = await response.json();
+                const filteredData = res.map(thread => ({threadId: thread.threadId, title: thread.title}));
+                //console.log(filteredData);
+                setAllThreads(filteredData);
+            } catch(err) {
+                console.log(err);
+            }
+        };
+
         getAllThreads();
-    }, [currThreadId])
+    }, [currThreadId, setAllThreads])
 
 
     const createNewChat = () => {
@@ -35,7 +35,7 @@ function Sidebar() {
         setCurrThreadId(newThreadId);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/thread/${newThreadId}`);
+            const response = await fetch(`http://localhost:5000/api/thread/${newThreadId}`);
             const res = await response.json();
             console.log(res);
             setPrevChats(res);
@@ -48,7 +48,7 @@ function Sidebar() {
 
     const deleteThread = async (threadId) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/thread/${threadId}`, {method: "DELETE"});
+            const response = await fetch(`http://localhost:5000/api/thread/${threadId}`, {method: "DELETE"});
             const res = await response.json();
             console.log(res);
 
@@ -76,7 +76,7 @@ function Sidebar() {
                 {
                     allThreads?.map((thread, idx) => (
                         <li key={idx} 
-                            onClick={(e) => changeThread(thread.threadId)}
+                            onClick={() => changeThread(thread.threadId)}
                             className={thread.threadId === currThreadId ? "highlighted": " "}
                         >
                             {thread.title}
@@ -92,7 +92,7 @@ function Sidebar() {
             </ul>
  
             <div className="sign">
-                <p>By ApnaCollege &hearts;</p>
+                <p>By Subham Tomar &hearts;</p>
             </div>
         </section>
     )

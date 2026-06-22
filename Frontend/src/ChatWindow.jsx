@@ -1,57 +1,55 @@
 import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from "./MyContext.jsx";
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState } from "react";
 import {ScaleLoader} from "react-spinners";
 
 function ChatWindow() {
-    const {prompt, setPrompt, reply, setReply, currThreadId, setPrevChats, setNewChat} = useContext(MyContext);
+    const {prompt, setPrompt, setReply, currThreadId, setPrevChats, setNewChat} = useContext(MyContext);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
     const getReply = async () => {
+        if (!prompt.trim()) return;
+
         setLoading(true);
         setNewChat(false);
 
-        console.log("message ", prompt, " threadId ", currThreadId);
+        const currentPrompt = prompt;
+        // Append user's message immediately for improved UX
+        setPrevChats(prevChats => [
+            ...prevChats,
+            { role: "user", content: currentPrompt }
+        ]);
+        setPrompt("");
+
+        console.log("message ", currentPrompt, " threadId ", currThreadId);
         const options = {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                message: prompt,
+                message: currentPrompt,
                 threadId: currThreadId
             })
         };
 
         try {
-            const response = await fetch("http://localhost:8080/api/chat", options);
+            const response = await fetch("http://localhost:5000/api/chat", options);
             const res = await response.json();
             console.log(res);
             setReply(res.reply);
+            setPrevChats(prevChats => [
+                ...prevChats,
+                { role: "assistant", content: res.reply }
+            ]);
         } catch(err) {
             console.log(err);
         }
         setLoading(false);
     }
 
-    //Append new chat to prevChats
-    useEffect(() => {
-        if(prompt && reply) {
-            setPrevChats(prevChats => (
-                [...prevChats, {
-                    role: "user",
-                    content: prompt
-                },{
-                    role: "assistant",
-                    content: reply
-                }]
-            ));
-        }
-
-        setPrompt("");
-    }, [reply]);
 
 
     const handleProfileClick = () => {
