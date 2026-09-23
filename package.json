@@ -2,12 +2,14 @@
   "name": "sigmagpt-monorepo",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "Frontend",
     "Backend"
   ],
   "scripts": {
     "build": "npm run build --prefix Frontend",
+    "test": "npm run test --prefix Backend",
     "dev:frontend": "npm run dev --prefix Frontend",
     "dev:backend": "npm run dev --prefix Backend"
   }

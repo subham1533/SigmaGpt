@@ -1,8 +1,15 @@
 import express from "express";
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import cors from "cors";
-import mongoose from "mongoose";
 import chatRoutes from "./routes/chat.js";
+import { getDatabase } from "./utils/database.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -10,24 +17,17 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
-// Database connection middleware for serverless environment
 const connectDBMiddleware = async (req, res, next) => {
-    if (mongoose.connection.readyState === 1) {
-        return next();
-    }
-    const dbUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/sigmagpt";
     try {
-        await mongoose.connect(dbUri);
-        console.log("Connected with Database successfully!");
+        await getDatabase();
         next();
     } catch (err) {
-        console.error(`Failed to connect with Database at ${dbUri}:`, err.message);
+        console.error("Failed to initialize SQLite database:", err.message);
         next(err);
     }
 };
 
 app.use(connectDBMiddleware);
-
 app.use("/api", chatRoutes);
 
 // Export app for Vercel Serverless
@@ -35,18 +35,7 @@ export default app;
 
 // Only listen when running locally (not in serverless environment)
 if (!process.env.VERCEL) {
-    app.listen(PORT, async () => {
+    app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
-        // Connect immediately when running locally
-        const dbUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/sigmagpt";
-        try {
-            await mongoose.connect(dbUri);
-            console.log("Connected with Database successfully (local)!");
-        } catch (err) {
-            console.error(`Failed to connect with Database at ${dbUri} (local):`, err.message);
-        }
     });
 }
-
-
-

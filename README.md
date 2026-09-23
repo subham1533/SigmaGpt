@@ -1,6 +1,6 @@
 # 🌌 SigmaGPT
 
-🤖 **A State-of-the-Art Full-Stack AI Chat Application powered by React, Express, MongoDB, and the Mistral API.**
+🤖 **A State-of-the-Art Full-Stack AI Chat Application powered by React, Express, SQLite, and the Mistral API.**
 
 ---
 
@@ -8,7 +8,7 @@
 [![Express.js](https://img.shields.io/badge/Express.js-v5.x-lightgrey.svg?style=for-the-badge&logo=express)](https://expressjs.com/)
 [![React](https://img.shields.io/badge/React-v19.x-blue.svg?style=for-the-badge&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-v7.x-purple.svg?style=for-the-badge&logo=vite)](https://vite.dev/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-v6.x-green.svg?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-local-blue.svg?style=for-the-badge&logo=sqlite)](https://www.sqlite.org/)
 [![Mistral](https://img.shields.io/badge/Mistral%20AI-Large%20Latest-orange.svg?style=for-the-badge)](https://mistral.ai/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
@@ -55,7 +55,7 @@ SigmaGPT was developed to demonstrate best practices in full-stack architecture,
 * **✍️ Simulated Word-by-Word Typing**: Assistant replies animate word-by-word via interval-based loops, mirroring a premium streaming interaction.
 * **📚 Thread History CRUD Management**: Users can create conversations, retrieve past threads instantly via the sidebar, and delete threads without page refreshes.
 * **🎨 Markdown & Code Highlights**: Chat bubbles support full markdown formatting, including automatic code block syntax highlighting powered by `rehype-highlight` and `github-dark` styles.
-* **🔒 Isolated API Architecture**: AI model keys and MONGODB URIs are protected on the backend using `dotenv` bounds, shielding secrets from frontend compilation.
+* **🔒 Isolated API Architecture**: AI model keys are protected on the backend using `dotenv`, shielding secrets from frontend compilation.
 * **⚙️ Database Automatic Syncing**: Every text completion updates thread histories and timestamps automatically.
 
 ---
@@ -91,10 +91,10 @@ SigmaGPT was developed to demonstrate best practices in full-stack architecture,
 ### Backend
 * **Node.js (ES Modules)**: Enables non-blocking event-driven JavaScript server environments.
 * **Express.js**: Minimalist framework that exposes clean, modular REST API routing controllers.
-* **Mongoose ODM**: Handles validation schemas and structures queries for MongoDB.
+* **SQLite**: Provides a temporary local database without requiring a separate database service.
 
 ### Database
-* **MongoDB**: NoSQL database that stores data as JSON-like documents, ideal for nested arrays of messages.
+* **SQLite**: Stores thread records and serialized message histories in a local file.
 
 ### AI Integration
 * **Mistral AI SDK**: Interfaces securely with Cloud completions models (`mistral-large-latest`).
@@ -108,7 +108,7 @@ SigmaGPT was developed to demonstrate best practices in full-stack architecture,
 sequenceDiagram
     participant User as React Frontend (Port 5173)
     participant Server as Express Server (Port 5000)
-    participant Database as MongoDB (Port 27017)
+   participant Database as SQLite (local file)
     participant Mistral as Mistral AI Cloud API
 
     User->>Server: POST /api/chat { threadId, message }
@@ -124,7 +124,7 @@ sequenceDiagram
 ### Key Flow Details
 * **Frontend Address**: `http://localhost:5173`
 * **API Gateway Address**: `http://localhost:5000` (Moved from port `8080` to prevent conflicts with local Oracle Database engines).
-* **Database Connection**: `mongodb://127.0.0.1:27017/sigmagpt` (Supports local developer fallbacks and production overrides).
+* **Database Connection**: `Backend/data/sigmagpt.sqlite` (created automatically on first request).
 
 ---
 
@@ -134,8 +134,8 @@ sequenceDiagram
 SigmaGPT/
 │
 ├── Backend/
-│   ├── models/
-│   │   └── Thread.js             # Mongoose schemas for Threads and Messages
+   │   ├── utils/
+   │   │   └── database.js          # SQLite connection and schema initialization
 │   ├── routes/
 │   │   └── chat.js               # REST API route controllers
 │   ├── utils/
@@ -170,23 +170,17 @@ SigmaGPT/
 
 ## 7. Database Design
 
-SigmaGPT uses an **Embedded Subdocument Design** inside MongoDB. Because chat messages are hierarchical and always scoped to a single conversation thread, storing messages as nested subdocuments allows us to fetch entire chat histories in a single query.
+SigmaGPT stores each thread in SQLite, with its message history serialized as JSON in the same row. Because chat messages are always scoped to one conversation, this keeps local development simple while preserving the existing API shape.
 
 ### Data Model Schema (`Thread`)
-```javascript
-const MessageSchema = new mongoose.Schema({
-    role: { type: String, enum: ["user", "assistant"], required: true },
-    content: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now }
-});
-
-const ThreadSchema = new mongoose.Schema({
-    threadId: { type: String, required: true, unique: true },
-    title: { type: String, default: "New Chat" },
-    messages: [MessageSchema], // Array of embedded subdocuments
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-});
+```sql
+CREATE TABLE threads (
+   threadId TEXT PRIMARY KEY,
+   title TEXT NOT NULL,
+   messages TEXT NOT NULL DEFAULT '[]',
+   createdAt TEXT NOT NULL,
+   updatedAt TEXT NOT NULL
+);
 ```
 
 ---
@@ -196,7 +190,7 @@ const ThreadSchema = new mongoose.Schema({
 1. **Client Request**: Frontend triggers `POST /api/chat` passing a JSON payload with `threadId` and the input `message`.
 2. **Database Load**: Express router intercepts the call, reads the database, and loads the active `Thread` document. If it is a new chat, it creates a new document.
 3. **AI completion**: The backend queries the Mistral API using the Mistral SDK, passing the current prompt.
-4. **State Commit**: The response from Mistral is appended to the document's `messages` array, and the document is committed to MongoDB using `await thread.save()`.
+4. **State Commit**: The response from Mistral is appended to the message array and saved to the local SQLite database.
 5. **Response Dispatch**: The Express server sends the AI-generated reply back to the client as JSON:
    ```json
    { "reply": "Mistral generated text response..." }
@@ -207,7 +201,7 @@ const ThreadSchema = new mongoose.Schema({
 ## 9. Installation Guide
 
 ### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) (v18 or higher) and [MongoDB](https://www.mongodb.com/try/download/community) installed and running on your local machine.
+Make sure you have [Node.js](https://nodejs.org/) (v18 or higher) installed on your local machine. SQLite is installed through the backend npm dependencies.
 
 ### 1. Clone the repository
 ```bash
@@ -254,9 +248,6 @@ Create a `.env` file inside the `Backend/` directory:
 ```env
 # Server Configuration (Defaults to 5000 if not specified)
 PORT=5000
-
-# Database Configuration (Defaults to local MongoDB instance if not specified)
-MONGODB_URI=mongodb://127.0.0.1:27017/sigmagpt
 
 # AI Model Keys (Required)
 MISTRAL_API_KEY=your_mistral_api_key_here
@@ -316,7 +307,7 @@ MISTRAL_API_KEY=your_mistral_api_key_here
 2. Deploy the generated `dist/` directory to static hosting services like **Vercel**, **Netlify**, or **GitHub Pages**.
 
 ### Backend
-1. Configure environment variables (`MONGODB_URI`, `MISTRAL_API_KEY`) in your production hosting platform.
+1. Configure the `MISTRAL_API_KEY` environment variable in your production hosting platform.
 2. Start the server in production mode:
    ```bash
    npm start
@@ -328,7 +319,7 @@ MISTRAL_API_KEY=your_mistral_api_key_here
 ## 16. Resume Impact
 
 This project demonstrates strong engineering skills in:
-* **Full-Stack Integration**: Connecting a modern SPA (Vite + React) to a Node/Express backend API gateway and a database (MongoDB).
+* **Full-Stack Integration**: Connecting a modern SPA (Vite + React) to a Node/Express backend API gateway and a local SQLite database.
 * **System Design**: Implementing embedded NoSQL databases, context-driven state propagation, and secure API proxy patterns.
 * **Debugging**: Resolving environment conflicts (port overlaps), managing linter compilations, and handling cross-origin access configurations.
 
