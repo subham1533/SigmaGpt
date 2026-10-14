@@ -144,6 +144,18 @@ const runAllTests = async () => {
         const healthRes = await request({ method: "GET", path: "/api/health" });
         assert(healthRes.status === 200 && healthRes.body.status === "ok", "GET /api/health returns 200 OK");
 
+        // Dashboard Stats
+        const statsRes = await request({ method: "GET", path: "/api/stats" });
+        assert(
+            statsRes.status === 200 &&
+            typeof statsRes.body.totalThreads === "number" &&
+            typeof statsRes.body.totalMessages === "number" &&
+            typeof statsRes.body.totalUserMessages === "number" &&
+            typeof statsRes.body.totalAssistantMessages === "number" &&
+            Array.isArray(statsRes.body.recentActivity),
+            "GET /api/stats returns valid dashboard stats"
+        );
+
         // Input Validation
         const emptyChatRes = await request({ method: "POST", path: "/api/chat", body: { threadId: "x", message: "" } });
         assert(emptyChatRes.status === 400, "POST /api/chat rejects empty message with 400");

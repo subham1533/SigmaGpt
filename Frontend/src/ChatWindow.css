@@ -114,6 +114,33 @@
     color: var(--text-secondary);
 }
 
+/* Dashboard nav button in ChatWindow navbar */
+.navDashBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.navDashBtn i {
+    font-size: 0.74rem;
+    color: inherit;
+}
+
+.navDashBtn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: var(--border-medium);
+}
+
 .userIconDiv {
     cursor: pointer;
 }

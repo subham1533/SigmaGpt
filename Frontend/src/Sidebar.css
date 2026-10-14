@@ -133,6 +133,46 @@
     font-family: monospace;
 }
 
+/* Sidebar Navigation (Chat / Dashboard) */
+.sidebarNav {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.sidebarNavItem {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sidebarNavItem i {
+    font-size: 0.78rem;
+    color: inherit;
+}
+
+.sidebarNavItem:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.sidebarNavActive {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--border-medium) !important;
+    color: #ffffff !important;
+}
+
 /* History Section */
 .historySection {
     flex: 1;

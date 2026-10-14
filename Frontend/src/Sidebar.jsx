@@ -15,7 +15,9 @@ function Sidebar() {
         setCurrThreadId, 
         setPrevChats,
         sidebarOpen,
-        setSidebarOpen
+        setSidebarOpen,
+        view,
+        setView
     } = useContext(MyContext);
 
     useEffect(() => {
@@ -103,6 +105,24 @@ function Sidebar() {
                 </div>
                 <span className="kbdShortcut">⌘N</span>
             </button>
+
+            {/* Navigation */}
+            <nav className="sidebarNav">
+                <button
+                    className={`sidebarNavItem ${view === "chat" ? "sidebarNavActive" : ""}`}
+                    onClick={() => { setView("chat"); createNewChat(); }}
+                >
+                    <i className="fa-regular fa-message"></i>
+                    <span>Chat</span>
+                </button>
+                <button
+                    className={`sidebarNavItem ${view === "dashboard" ? "sidebarNavActive" : ""}`}
+                    onClick={() => setView("dashboard")}
+                >
+                    <i className="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </button>
+            </nav>
 
             {/* History Section */}
             <div className="historySection">

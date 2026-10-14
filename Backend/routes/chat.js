@@ -23,6 +23,59 @@ router.get("/health", async (req, res) => {
     }
 });
 
+// Dashboard stats endpoint
+router.get("/stats", async (req, res) => {
+    try {
+        const database = await getDatabase();
+
+        // Total threads
+        const { total: totalThreads } = await database.get("SELECT COUNT(*) as total FROM threads");
+
+        // All threads for message counting
+        const allThreads = await database.all("SELECT messages, createdAt, updatedAt, title FROM threads ORDER BY updatedAt DESC");
+
+        let totalMessages = 0;
+        let totalUserMessages = 0;
+        let totalAssistantMessages = 0;
+        const recentActivity = [];
+
+        allThreads.forEach(thread => {
+            let msgs = [];
+            try { msgs = JSON.parse(thread.messages); } catch { msgs = []; }
+            totalMessages += msgs.length;
+            totalUserMessages += msgs.filter(m => m.role === "user").length;
+            totalAssistantMessages += msgs.filter(m => m.role === "assistant").length;
+        });
+
+        // Recent 5 threads with message count
+        allThreads.slice(0, 5).forEach(thread => {
+            let msgs = [];
+            try { msgs = JSON.parse(thread.messages); } catch { msgs = []; }
+            recentActivity.push({
+                title: thread.title,
+                messageCount: msgs.length,
+                updatedAt: thread.updatedAt,
+                createdAt: thread.createdAt
+            });
+        });
+
+        // Oldest thread date
+        const oldest = await database.get("SELECT MIN(createdAt) as firstChat FROM threads");
+
+        res.json({
+            totalThreads,
+            totalMessages,
+            totalUserMessages,
+            totalAssistantMessages,
+            model: process.env.MISTRAL_MODEL || "ministral-8b-latest",
+            firstChatAt: oldest?.firstChat || null,
+            recentActivity
+        });
+    } catch (err) {
+        console.error("Stats error:", err);
+        res.status(500).json({ error: "Failed to fetch stats" });
+    }
+});
 
 // Get all threads
 router.get("/thread", async (req, res) => {

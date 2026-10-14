@@ -14,7 +14,8 @@ function ChatWindow() {
         setNewChat,
         sidebarOpen,
         setSidebarOpen,
-        setAllThreads
+        setAllThreads,
+        setView
     } = useContext(MyContext);
 
     const [loading, setLoading] = useState(false);
@@ -119,6 +120,15 @@ function ChatWindow() {
                         <span className="badgeDot"></span>
                         <span className="badgeText">by Subham Tomar</span>
                     </div>
+
+                    <button
+                        className="navDashBtn"
+                        onClick={() => setView("dashboard")}
+                        title="Open Dashboard"
+                    >
+                        <i className="fa-solid fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </button>
 
                     <div className="userIconDiv" onClick={handleProfileClick} title="Account Menu">
                         <div className="userIcon">
